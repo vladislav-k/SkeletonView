@@ -1,0 +1,57 @@
+name: Swift Package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare standalone package
+        run: |
+          mkdir -p "$RUNNER_TEMP/SkeletonViewPackage"
+          cp Package.swift "$RUNNER_TEMP/SkeletonViewPackage/"
+          cp -R SkeletonViewCore "$RUNNER_TEMP/SkeletonViewPackage/"
+      - name: Select an available iPhone simulator
+        run: |
+          xcrun simctl list devices available --json > "$RUNNER_TEMP/simulators.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          devices = json.loads(Path(os.environ['RUNNER_TEMP'], 'simulators.json').read_text())['devices']
+          iphones = [device for runtime, entries in devices.items() if '.iOS-' in runtime
+                     for device in entries if device['name'].startswith('iPhone')]
+          if not iphones:
+              raise SystemExit('No available iPhone simulator runtime')
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('SKELETON_SIMULATOR_ID=' + iphones[0]['udid'] + '\n')
+          PY
+      - name: Test iOS package
+        working-directory: ${{ runner.temp }}/SkeletonViewPackage
+        run: >-
+          xcodebuild test -scheme SkeletonView
+          -destination "platform=iOS Simulator,id=$SKELETON_SIMULATOR_ID"
+          -resultBundlePath "$RUNNER_TEMP/SkeletonViewTests.xcresult"
+          CODE_SIGNING_ALLOWED=NO
+      - name: Build tvOS package
+        working-directory: ${{ runner.temp }}/SkeletonViewPackage
+        run: >-
+          xcodebuild build -scheme SkeletonView
+          -destination 'generic/platform=tvOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkeletonView-test-results
+          path: ${{ runner.temp }}/SkeletonViewTests.xcresult
+          if-no-files-found: ignore

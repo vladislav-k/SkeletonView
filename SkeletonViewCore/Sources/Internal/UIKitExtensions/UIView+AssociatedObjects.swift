@@ -15,13 +15,14 @@ import UIKit
 
 // codebeat:disable[TOO_MANY_IVARS]
 enum ViewAssociatedKeys {
-    
+
     static var skeletonable = "skeletonable"
     static var hiddenWhenSkeletonIsActive = "hiddenWhenSkeletonIsActive"
     static var status = "status"
     static var skeletonLayer = "layer"
     static var flowDelegate = "flowDelegate"
     static var isSkeletonAnimated = "isSkeletonAnimated"
+    static var tracksSkeletonContent: UInt8 = 0
     static var viewState = "viewState"
     static var labelViewState = "labelViewState"
     static var imageViewState = "imageViewState"
@@ -31,12 +32,12 @@ enum ViewAssociatedKeys {
     static var skeletonCornerRadius = "skeletonCornerRadius"
     static var disabledWhenSkeletonIsActive = "disabledWhenSkeletonIsActive"
     static var delayedShowSkeletonWorkItem = "delayedShowSkeletonWorkItem"
-    
+
 }
 // codebeat:enable[TOO_MANY_IVARS]
 
 extension UIView {
-    
+
     enum SkeletonStatus {
         case on
         case off
@@ -66,22 +67,22 @@ extension UIView {
         get { return ao_get(pkey: &ViewAssociatedKeys.isSkeletonAnimated) as? Bool ?? false }
         set { ao_set(newValue, pkey: &ViewAssociatedKeys.isSkeletonAnimated) }
     }
-    
+
     var _delayedShowSkeletonWorkItem: DispatchWorkItem? {
         get { return ao_get(pkey: &ViewAssociatedKeys.delayedShowSkeletonWorkItem) as? DispatchWorkItem }
         set { ao_setOptional(newValue, pkey: &ViewAssociatedKeys.delayedShowSkeletonWorkItem) }
     }
-    
+
     var _skeletonable: Bool {
         get { return ao_get(pkey: &ViewAssociatedKeys.skeletonable) as? Bool ?? false }
         set { ao_set(newValue, pkey: &ViewAssociatedKeys.skeletonable) }
     }
-    
+
     var _hiddenWhenSkeletonIsActive: Bool {
         get { return ao_get(pkey: &ViewAssociatedKeys.hiddenWhenSkeletonIsActive) as? Bool ?? false }
         set { ao_set(newValue, pkey: &ViewAssociatedKeys.hiddenWhenSkeletonIsActive) }
     }
-    
+
     var _disabledWhenSkeletonIsActive: Bool {
         get { return ao_get(pkey: &ViewAssociatedKeys.disabledWhenSkeletonIsActive) as? Bool ?? true }
         set { ao_set(newValue, pkey: &ViewAssociatedKeys.disabledWhenSkeletonIsActive) }
@@ -90,5 +91,33 @@ extension UIView {
     var _skeletonableCornerRadius: Float {
         get { return ao_get(pkey: &ViewAssociatedKeys.skeletonCornerRadius) as? Float ?? SkeletonViewAppearance.shared.skeletonCornerRadius }
         set { ao_set(newValue, pkey: &ViewAssociatedKeys.skeletonCornerRadius) }
+    }
+}
+
+
+extension UIView
+{
+    var tracksSkeletonContent: Bool
+    {
+        get
+        {
+            return self.ao_get(pkey: &ViewAssociatedKeys.tracksSkeletonContent) as? Bool ?? false
+        }
+        set
+        {
+            self.ao_set(newValue, pkey: &ViewAssociatedKeys.tracksSkeletonContent)
+        }
+    }
+
+    /// UIKit setters can call other setters internally. Only record the caller's change.
+    func withoutSkeletonContentTracking(_ changes: () -> Void)
+    {
+        let wasTracking = self.tracksSkeletonContent
+        self.tracksSkeletonContent = false
+        defer
+        {
+            self.tracksSkeletonContent = wasTracking
+        }
+        changes()
     }
 }

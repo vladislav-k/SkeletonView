@@ -1,11 +1,21 @@
+> [!NOTE]
+> **What this fork fixes**
+>
+> - Skeleton layers automatically follow the view's bounds and Auto Layout changes, including shrinking.
+> - Multiline skeletons recalculate their line count when resized and preserve their tint and animation.
+> - Content updated while loading is retained after `hideSkeleton()`, including text, attributed text, text colors, placeholders, images, and normal button titles. Explicit `nil` and empty values replace old content.
+> - Hiding one skeleton no longer disables automatic layout for others, and restarting loading during fade-out keeps the new skeleton intact.
+> - Swift Package Manager builds from source with the privacy manifest included and dedicated iOS tests and tvOS build checks. Requires Swift 5.5+, iOS 12+, or tvOS 12+.
+>
+> Install this fork from `https://github.com/vladislav-k/SkeletonView.git` using the `main` branch. Upstream release tags do not include these fixes.
+
 ![](Assets/header2.jpg)
 
 <p align="center">
-    <a href="https://github.com/Juanpe/SkeletonView/actions?query=workflow%3ACI">
-      <img src="https://github.com/Juanpe/SkeletonView/workflows/CI/badge.svg">
+    <a href="https://github.com/vladislav-k/SkeletonView/actions/workflows/spm.yml">
+      <img src="https://github.com/vladislav-k/SkeletonView/actions/workflows/spm.yml/badge.svg">
     </a>
     <a href="https://codebeat.co/projects/github-com-juanpe-skeletonview-main"><img alt="codebeat badge" src="https://codebeat.co/badges/1f37bbab-a1c8-4a4a-94d7-f21740d461e9" /></a>
-    <a href="https://cocoapods.org/pods/SkeletonView"><img src="https://img.shields.io/cocoapods/v/SkeletonView.svg?style=flat"></a>
     <a href="https://github.com/Carthage/Carthage/"><img src="https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat"></a>
     <a href="https://swift.org/package-manager/"><img src="https://img.shields.io/badge/SPM-supported-Green.svg?style=flat"></a>
     <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FJuanpe%2FSkeletonView%2Fbadge%3Ftype%3Dplatforms"/>
@@ -70,12 +80,6 @@ Enjoy it! 🙂
 
 ## 📲 Installation
 
-* [CocoaPods](https://guides.cocoapods.org/using/using-cocoapods.html):
-
-```ruby
-pod 'SkeletonView'
-```
-
 * [Carthage](https://github.com/Carthage/Carthage):
 
 ```ruby
@@ -86,7 +90,7 @@ github "Juanpe/SkeletonView"
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Juanpe/SkeletonView.git", from: "1.7.0")
+  .package(url: "https://github.com/vladislav-k/SkeletonView.git", branch: "main")
 ]
 ```
 
@@ -94,6 +98,33 @@ dependencies: [
 >
 > Since version 1.30.0, `SkeletonView` supports **XCFrameworks**, so if you want to install it as a **XCFramework**, please use [this repo](https://github.com/Juanpe/SkeletonView-XCFramework.git) instead.
 
+
+### Fork notes
+
+This fork builds from source with Swift Package Manager on iOS 12+ and tvOS 12+.
+Use this fork's URL and the `main` branch in Xcode's **Add Package Dependencies**,
+then select the `SkeletonView` product. Upstream release tags do not include this
+fork's fixes; a version requirement should point to a new release tag containing them.
+For local development, add this repository folder as a local package in Xcode.
+
+Skeleton layers follow the view's actual bounds, including shrinking and Auto Layout
+updates. Multiline skeletons recalculate their line count when resized and retain their
+tint and animation. Views with custom layout can still call `layoutSkeletonIfNeeded()`.
+
+Content assigned while loading is retained when the skeleton is hidden, including
+plain and attributed text, text colors, text field placeholders, image view images,
+and normal button titles. Explicit `nil` and empty values also replace old content.
+Content remains hidden until `hideSkeleton()` is called:
+
+```swift
+label.showAnimatedGradientSkeleton()
+label.text = "Loaded content"
+label.hideSkeleton()
+```
+
+The Swift Package workflow tests the package on an iOS simulator and builds it for
+tvOS. The package includes `PrivacyInfo.xcprivacy` and excludes the framework and test
+Info.plists from SwiftPM targets.
 
 ## 🐒 Usage
 

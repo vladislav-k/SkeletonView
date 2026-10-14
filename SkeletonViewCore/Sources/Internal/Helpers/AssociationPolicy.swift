@@ -10,7 +10,7 @@ enum AssociationPolicy: UInt {
     case copyNonatomic = 3
     case retain = 769
     case retainNonatomic = 1
-    
+
     var objc: objc_AssociationPolicy {
         // swiftlint:disable:next force_unwrapping
         return objc_AssociationPolicy(rawValue: rawValue)!
@@ -26,8 +26,8 @@ extension AssociatedObjects {
     }
 
     /// wrapper around `objc_setAssociatedObject`
-    func ao_setOptional(_ value: Any?, pkey: UnsafeRawPointer, policy: AssociationPolicy = .retainNonatomic) {
-        guard let value = value else { return }
+    func ao_setOptional(_ value: Any?, pkey: UnsafeRawPointer, policy: AssociationPolicy = .retainNonatomic)
+    {
         objc_setAssociatedObject(self, pkey, value, policy.objc)
     }
 

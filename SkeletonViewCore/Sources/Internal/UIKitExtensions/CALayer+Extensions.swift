@@ -14,7 +14,7 @@
 import UIKit
 
 extension CAGradientLayer {
-    
+
     override func tint(withColors colors: [UIColor], traitCollection: UITraitCollection?) {
         skeletonSublayers.recursiveSearch(leafBlock: {
             if #available(iOS 13.0, tvOS 13, *), let traitCollection = traitCollection {
@@ -26,19 +26,19 @@ extension CAGradientLayer {
             $0.tint(withColors: colors, traitCollection: traitCollection)
         }
     }
-    
+
 }
 
 extension CALayer {
-    
+
     enum Constants {
         static let skeletonSubLayersName = "SkeletonSubLayersName"
     }
-    
+
     var skeletonSublayers: [CALayer] {
         return sublayers?.filter { $0.name == Constants.skeletonSubLayersName } ?? [CALayer]()
     }
-    
+
     @objc func tint(withColors colors: [UIColor], traitCollection: UITraitCollection?) {
         skeletonSublayers.recursiveSearch(leafBlock: {
             if #available(iOS 13.0, tvOS 13, *), let traitCollection = traitCollection {
@@ -50,7 +50,7 @@ extension CALayer {
             $0.tint(withColors: colors, traitCollection: traitCollection)
         }
     }
-    
+
     func playAnimation(_ anim: SkeletonLayerAnimation, key: String, completion: (() -> Void)? = nil) {
         skeletonSublayers.recursiveSearch(leafBlock: {
             DispatchQueue.main.async { CATransaction.begin() }
@@ -61,7 +61,7 @@ extension CALayer {
             $0.playAnimation(anim, key: key, completion: completion)
         }
     }
-    
+
     func stopAnimation(forKey key: String) {
         skeletonSublayers.recursiveSearch(leafBlock: {
             removeAnimation(forKey: key)
@@ -69,7 +69,7 @@ extension CALayer {
             $0.stopAnimation(forKey: key)
         }
     }
-    
+
     func setOpacity(from: Int, to: Int, duration: TimeInterval, completion: (() -> Void)?) {
         DispatchQueue.main.async { CATransaction.begin() }
         let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
@@ -81,7 +81,7 @@ extension CALayer {
         add(animation, forKey: "setOpacityAnimation")
         DispatchQueue.main.async { CATransaction.commit() }
     }
-    
+
     func insertSkeletonLayer(_ sublayer: SkeletonLayer, atIndex index: UInt32, transition: SkeletonTransitionStyle, completion: (() -> Void)? = nil) {
         insertSublayer(sublayer.contentLayer, at: index)
         switch transition {
@@ -91,11 +91,11 @@ extension CALayer {
             sublayer.contentLayer.setOpacity(from: 0, to: 1, duration: duration, completion: completion)
         }
     }
-    
+
 }
 
 private extension CALayer {
-    
+
     func alignLayerFrame(_ rect: CGRect, paddingInsets: UIEdgeInsets, alignment: NSTextAlignment, isRTL: Bool) -> CGRect {
         var newRect = rect
         let superlayerWidth = (superlayer?.bounds.width ?? 0)
@@ -114,15 +114,16 @@ private extension CALayer {
 
         return newRect
     }
-    
-    func calculatedWidthForLine(at index: Int, totalLines: Int, lastLineFillPercent: Int, paddingInsets: UIEdgeInsets) -> CGFloat {
-        var width = bounds.width - paddingInsets.left - paddingInsets.right
+
+    func calculatedWidthForLine(at index: Int, totalLines: Int, lastLineFillPercent: Int, paddingInsets: UIEdgeInsets) -> CGFloat
+    {
+        var width = max(0, self.bounds.width - paddingInsets.left - paddingInsets.right)
         if index == totalLines - 1 {
             width = width * CGFloat(lastLineFillPercent) / 100
         }
         return width
     }
- 
+
     func calculateNumLines(for config: SkeletonMultilinesLayerConfig) -> Int {
         let definedNumberOfLines = config.lines
         let requiredSpaceForEachLine = config.lineHeight + config.multilineSpacing
@@ -135,21 +136,21 @@ private extension CALayer {
         guard calculatedNumberOfLines > 0 else {
             return 1
         }
-        
+
         if definedNumberOfLines > 0, definedNumberOfLines <= calculatedNumberOfLines {
             return definedNumberOfLines
         }
-        
+
         return calculatedNumberOfLines
     }
 }
 
 extension CALayer {
-    
+
     func addMultilinesLayers(for config: SkeletonMultilinesLayerConfig) {
         let numberOfSublayers = config.lines > 0 ? config.lines : calculateNumLines(for: config)
         var height = config.lineHeight
-        
+
         if numberOfSublayers == 1 && SkeletonAppearance.default.renderSingleLineAsView {
             height = bounds.height
         }
@@ -162,7 +163,7 @@ extension CALayer {
             .setHeight(height)
             .setAlignment(config.alignment)
             .setIsRTL(config.isRTL)
-    
+
         (0..<numberOfSublayers).forEach { index in
             let width = calculatedWidthForLine(at: index, totalLines: numberOfSublayers, lastLineFillPercent: config.lastLineFillPercent, paddingInsets: config.paddingInsets)
             if let layer = layerBuilder
@@ -174,20 +175,30 @@ extension CALayer {
         }
     }
 
-    func updateMultilinesLayers(for config: SkeletonMultilinesLayerConfig) {
-        let currentSkeletonSublayers = skeletonSublayers
-        let numberOfSublayers = currentSkeletonSublayers.count
+    func updateMultilinesLayers(for config: SkeletonMultilinesLayerConfig)
+    {
+        let numberOfSublayers = config.lines > 0 ? config.lines : self.calculateNumLines(for: config)
+        if self.skeletonSublayers.count != numberOfSublayers
+        {
+            self.skeletonSublayers.forEach
+            {
+                $0.removeFromSuperlayer()
+            }
+            self.addMultilinesLayers(for: config)
+        }
+        let currentSkeletonSublayers = self.skeletonSublayers
         let lastLineFillPercent = config.lastLineFillPercent
         let paddingInsets = config.calculatedPaddingInsets
         let multilineSpacing = config.multilineSpacing
         var height = config.lineHeight
-        
+
         if numberOfSublayers == 1 && SkeletonAppearance.default.renderSingleLineAsView {
             height = bounds.height
         }
-        
+
         for (index, layer) in currentSkeletonSublayers.enumerated() {
             let width = calculatedWidthForLine(at: index, totalLines: numberOfSublayers, lastLineFillPercent: lastLineFillPercent, paddingInsets: paddingInsets)
+            layer.cornerRadius = CGFloat(config.multilineCornerRadius)
             layer.updateLayerFrame(for: index,
                                    totalLines: numberOfSublayers,
                                    size: CGSize(width: width, height: height),
@@ -197,16 +208,16 @@ extension CALayer {
                                    isRTL: config.isRTL
             )
         }
-        
+
         guard config.shouldCenterVertically,
               let maxY = currentSkeletonSublayers.last?.frame.maxY else {
             return
         }
         let verticallyCenterAlignedFrames = currentSkeletonSublayers.map { layer -> CGRect in
-            let moveDownBy = (bounds.height - (maxY + paddingInsets.top + paddingInsets.bottom)) / 2
+            let moveDownBy = (self.bounds.height - paddingInsets.bottom - maxY) / 2
             return layer.frame.offsetBy(dx: 0, dy: moveDownBy)
         }
-        
+
         for (index, layer) in currentSkeletonSublayers.enumerated() {
             layer.frame = verticallyCenterAlignedFrames[index]
         }
@@ -225,5 +236,5 @@ extension CALayer {
             frame = newFrame
         }
     }
-    
+
 }
